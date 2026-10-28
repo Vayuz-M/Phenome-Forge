@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phoneme Forge — AI Pronunciation Coach</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c3aed'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='%23fdf8ff' font-weight='bold'>P</text></svg>" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){var t=localStorage.getItem('pf_theme');document.documentElement.setAttribute('data-theme',t||'dark');})()</script>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<canvas id="cursor-trail-canvas"></canvas>
+
+<!-- Nav -->
+<nav class="nav">
+  <a class="nav-logo" href="/"><span>Phoneme</span> Forge</a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="app.html">Practice</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="login.html" class="nav-cta">Sign In</a>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+  </div>
+</nav>
+
+<!-- Hero with Three.js canvas -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-eyebrow">AI-Powered Pronunciation Analysis</div>
+    <h1>
+      Speak. <span class="accent">Score.</span><br>
+      <span class="outline">Improve.</span>
+    </h1>
+    <p class="hero-sub">
+      Record your voice, get an instant AI pronunciation score, and receive detailed coaching feedback — powered by Whisper and LLaMA-3.
+    </p>
+    <div class="hero-actions">
+      <a href="app.html" class="btn-primary">🎙 Start Practicing</a>
+      <a href="login.html" class="btn-ghost">Sign In →</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <span class="hero-stat-n">0–100</span>
+        <div class="hero-stat-l">Live Score</div>
+      </div>
+      <div>
+        <span class="hero-stat-n">Whisper</span>
+        <div class="hero-stat-l">Transcription</div>
+      </div>
+      <div>
+        <span class="hero-stat-n">LLaMA-3</span>
+        <div class="hero-stat-l">AI Feedback</div>
+      </div>
+      <div>
+        <span class="hero-stat-n">&lt;3s</span>
+        <div class="hero-stat-l">Response Time</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<div style="position:relative;z-index:1;background:var(--feat-bg);border-top:1px solid var(--border);">
+  <div class="section">
+    <div class="section-eyebrow">// FEATURES</div>
+    <h2 class="section-title">Everything you need to<br>master pronunciation</h2>
+    <p class="section-sub">A full-stack AI coaching platform built on battle-tested speech technology.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎙</div>
+        <h3>Live Recording</h3>
+        <p>Web Audio API captures your microphone in real time with a live waveform visualisation as you speak.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>Whisper Transcription</h3>
+        <p>OpenAI Whisper converts your speech to text with state-of-the-art accuracy — even with accents.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Multi-Dimensional Score</h3>
+        <p>Accuracy, fluency, and completeness scores give you a detailed breakdown of your performance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Coaching Feedback</h3>
+        <p>Groq LLaMA-3 generates personalised coaching: strengths, improvement areas, and practice tips.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Word-Level Analysis</h3>
+        <p>See exactly which words you nailed, which you missed, and which you substituted — colour-coded.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Firebase Auth</h3>
+        <p>Secure login with email/password or Google. Your session and practice history are protected.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="text-align:center;padding:4rem 2rem 6rem;position:relative;z-index:1;">
+    <div style="font-family:'Syne',sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;margin-bottom:1rem;">
+      Ready to improve your<br><span style="color:var(--amber)">pronunciation?</span>
+    </div>
+    <p style="color:var(--text-2);margin-bottom:2rem;font-size:0.95rem;">
+      No setup needed. Click below and start speaking.
+    </p>
+    <a href="app.html" class="btn-primary" style="font-size:1rem;padding:1rem 2.5rem;">
+      🎙 Launch Practice Room
+    </a>
+  </div>
+
+  <footer style="border-top:1px solid var(--border);padding:1.5rem 2.5rem;display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:var(--text-4);">
+    <span>© 2025 Phoneme Forge. Built with FastAPI + Whisper + Groq.</span>
+    <span style="font-family:'JetBrains Mono',monospace;">v1.0.0</span>
+  </footer>
+</div>
+
+<!-- Anti-gravity button -->
+<button class="gravity-btn" id="gravityBtn" onclick="toggleGravity()">⚛ Enable Anti-Gravity Mode</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/antigravity.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/gamification.js"></script>
+<script>
+/* ── THREE.JS HERO BACKGROUND ─────────────────────────────────────────── */
+(function(){
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+  camera.position.z = 5;
+
+  // ── Particle field ────────────────────────────────────────────────────
+  const COUNT  = 1200;
+  const geo    = new THREE.BufferGeometry();
+  const pos    = new Float32Array(COUNT * 3);
+  const phases = new Float32Array(COUNT);
+  for (let i = 0; i < COUNT; i++) {
+    pos[i*3]   = (Math.random()-0.5)*14;
+    pos[i*3+1] = (Math.random()-0.5)*8;
+    pos[i*3+2] = (Math.random()-0.5)*6;
+    phases[i]  = Math.random() * Math.PI * 2;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: 0xa78bfa, size: 0.028, transparent: true,
+    opacity: 0.55, sizeAttenuation: true,
+  });
+  const particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  // ── Neural connection lines ────────────────────────────────────────────
+  const lineGeo = new THREE.BufferGeometry();
+  const lineVerts = [];
+  for (let i = 0; i < 80; i++) {
+    const a = Math.floor(Math.random() * COUNT) * 3;
+    const b = Math.floor(Math.random() * COUNT) * 3;
+    lineVerts.push(pos[a], pos[a+1], pos[a+2]);
+    lineVerts.push(pos[b], pos[b+1], pos[b+2]);
+  }
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVerts), 3));
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.09 });
+  scene.add(new THREE.LineSegments(lineGeo, lineMat));
+
+  // ── Voice waveform ring ────────────────────────────────────────────────
+  const ringPoints = [];
+  const RING_SEGS  = 120;
+  for (let i = 0; i <= RING_SEGS; i++) {
+    const a = (i / RING_SEGS) * Math.PI * 2;
+    ringPoints.push(new THREE.Vector3(Math.cos(a)*1.8, Math.sin(a)*1.8, 0));
+  }
+  const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+  const ringMat = new THREE.LineBasicMaterial({ color: 0xc4b5fd, transparent: true, opacity: 0.24 });
+  const ring    = new THREE.Line(ringGeo, ringMat);
+  scene.add(ring);
+
+  // ── Resize ─────────────────────────────────────────────────────────────
+  function resize() {
+    const hero = document.querySelector('.hero');
+    const W = hero.clientWidth, H = hero.clientHeight;
+    renderer.setSize(W, H);
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Mouse parallax ─────────────────────────────────────────────────────
+  let mx = 0, my = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  // ── Animate ────────────────────────────────────────────────────────────
+  let t = 0;
+  (function animate() {
+    requestAnimationFrame(animate);
+    t += 0.008;
+
+    // Breathe particles
+    const posArr = geo.attributes.position.array;
+    for (let i = 0; i < COUNT; i++) {
+      posArr[i*3+2] = (Math.sin(t + phases[i]) * 0.4);
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    // Animate ring (voice waveform effect)
+    const ringArr = ringGeo.attributes.position.array;
+    for (let i = 0; i <= RING_SEGS; i++) {
+      const a = (i / RING_SEGS) * Math.PI * 2;
+      const wave = 1.8 + Math.sin(a * 8 + t * 3) * 0.08 + Math.sin(a * 3 - t * 2) * 0.05;
+      ringArr[i*3]   = Math.cos(a) * wave;
+      ringArr[i*3+1] = Math.sin(a) * wave;
+    }
+    ringGeo.attributes.position.needsUpdate = true;
+
+    particles.rotation.y  = t * 0.04 + mx * 0.08;
+    particles.rotation.x  = my * 0.05;
+    camera.position.x     = mx * 0.3;
+    camera.position.y     = -my * 0.2;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+  })();
+})();
+</script>
+</body>
+</html>

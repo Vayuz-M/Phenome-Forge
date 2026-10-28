@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard — Phoneme Forge</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c3aed'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='%23fdf8ff' font-weight='bold'>P</text></svg>" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){var t=localStorage.getItem('pf_theme');document.documentElement.setAttribute('data-theme',t||'dark');})()</script>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<canvas id="cursor-trail-canvas"></canvas>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span>Phoneme</span> Forge</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="app.html">Practice</a>
+    <a href="leaderboard.html" class="active">Leaderboard</a>
+    <span id="navUser" style="font-size:0.8rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;"></span>
+    <button id="navSignOut" onclick="signOutUser()" style="display:none;background:transparent;border:1px solid var(--border-mid);color:var(--text-3);border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 160ms;" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border-mid)';this.style.color='var(--text-3)'">Sign Out</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+  </div>
+</nav>
+
+<div class="lb-page">
+
+  <div class="lb-hero">
+    <div class="lb-hero-eyebrow">// GLOBAL RANKINGS</div>
+    <h1 class="lb-hero-title">Leaderboard</h1>
+    <p class="lb-hero-sub">Top pronunciation learners this week. Keep practicing to climb the ranks.</p>
+  </div>
+
+  <!-- Podium top 3 -->
+  <div class="podium-wrap" id="podiumWrap"></div>
+
+  <!-- Filter tabs -->
+  <div class="lb-filters">
+    <button class="lb-filter active" onclick="setFilter('weekly',this)">This Week</button>
+    <button class="lb-filter" onclick="setFilter('alltime',this)">All Time</button>
+    <button class="lb-filter" onclick="setFilter('level',this)">By Level</button>
+  </div>
+
+  <!-- Table -->
+  <div class="lb-table-wrap">
+    <div class="lb-table-head">
+      <div>Rank</div>
+      <div>User</div>
+      <div>Level</div>
+      <div>Accuracy</div>
+      <div>XP</div>
+    </div>
+    <div id="lbTableBody"></div>
+  </div>
+
+  <!-- Your rank callout -->
+  <div class="lb-your-rank" id="lbYourRank" style="display:none">
+    <span>Your current rank: </span>
+    <span class="lb-your-rank-num" id="lbYourRankNum">#—</span>
+    <a href="app.html" class="lb-your-rank-cta">Practice now →</a>
+  </div>
+
+</div>
+
+<script src="js/cursor.js"></script>
+<script src="js/antigravity.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/gamification.js"></script>
+
+<script type="module">
+import { auth } from "/firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+onAuthStateChanged(auth, user => {
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('navUser').textContent  = name;
+    document.getElementById('navSignOut').style.display = '';
+  }
+});
+window.signOutUser = async function() {
+  await signOut(auth);
+  window.location.href = '/login';
+};
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  renderLeaderboard('weekly');
+});
+
+let currentFilter = 'weekly';
+
+window.setFilter = function(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.lb-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeaderboard(type);
+};
+
+function renderLeaderboard(type) {
+  const data = getLBData(type);
+  renderPodium(data.slice(0, 3));
+  renderTable(data);
+  // highlight self
+  const me = data.findIndex(u => u.me);
+  if (me > -1) {
+    document.getElementById('lbYourRank').style.display = 'flex';
+    document.getElementById('lbYourRankNum').textContent = '#' + (me + 1);
+  }
+}
+
+function getLBData(type) {
+  // Merged: seed data + real local gamification data
+  const local = window.PF && window.PF.getStats ? window.PF.getStats() : null;
+  const base = [
+    { name:'Priya S.',   xp:820, level:7, acc:94, av:'PS', color:'#a78bfa' },
+    { name:'Rahul M.',   xp:740, level:6, acc:91, av:'RM', color:'#f472b6' },
+    { name:'Arjun K.',   xp:680, level:6, acc:89, av:'AK', color:'#34d399' },
+    { name:'Sneha R.',   xp:610, level:5, acc:87, av:'SR', color:'#fbbf24' },
+    { name:'Dev P.',     xp:540, level:5, acc:85, av:'DP', color:'#60a5fa' },
+    { name:'Nisha T.',   xp:480, level:4, acc:82, av:'NT', color:'#f87171' },
+    { name:'Amar J.',    xp:410, level:4, acc:80, av:'AJ', color:'#2dd4bf' },
+    { name:'Kavya L.',   xp:350, level:3, acc:77, av:'KL', color:'#c084fc' },
+    { name:'Rohan B.',   xp:240, level:3, acc:74, av:'RB', color:'#fb923c' },
+    { name:'Meera D.',   xp:180, level:2, acc:70, av:'MD', color:'#e879f9' },
+  ];
+  if (local && local.xp > 0) {
+    const me = {
+      name: 'You', xp: local.xp, level: local.level,
+      acc: local.avgAccuracy || 75, av: 'ME', color: 'var(--amber)', me: true
+    };
+    base.push(me);
+    base.sort((a,b) => b.xp - a.xp);
+  } else {
+    base[4].me = true; // default "you" position
+  }
+  if (type === 'level') base.sort((a,b) => b.level - a.level || b.xp - a.xp);
+  return base;
+}
+
+function renderPodium(top) {
+  const medals = ['🥇','🥈','🥉'];
+  const order  = [1, 0, 2]; // display: 2nd, 1st, 3rd
+  const heights = [80, 110, 60];
+  document.getElementById('podiumWrap').innerHTML = `
+    <div class="podium">
+      ${order.map(i => `
+        <div class="podium-slot ${i===0?'podium-first':''}">
+          <div class="podium-av" style="background:${top[i]?.color||'var(--amber)'}22;color:${top[i]?.color||'var(--amber)'};border:2px solid ${top[i]?.color||'var(--amber)'}44">
+            ${top[i]?.av||'—'}
+          </div>
+          <div class="podium-pname">${top[i]?.name||'—'}</div>
+          <div class="podium-pxp">${top[i]?.xp||0} XP</div>
+          <div class="podium-block" style="height:${heights[order.indexOf(i)]}px">
+            <span class="podium-medal">${medals[i]}</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderTable(data) {
+  const body = document.getElementById('lbTableBody');
+  body.innerHTML = data.map((u, i) => `
+    <div class="lb-row ${u.me ? 'lb-row-me' : ''}">
+      <div class="lb-cell lb-rank-cell">
+        <span class="lb-rank ${i===0?'lb-gold':i===1?'lb-silver':i===2?'lb-bronze':''}">${i+1}</span>
+      </div>
+      <div class="lb-cell lb-user-cell">
+        <div class="lb-av-sm" style="background:${u.color}22;color:${u.color}">${u.av}</div>
+        <div>
+          <div class="lb-uname">${u.name}${u.me?' <span class="lb-you-tag">you</span>':''}</div>
+          <div class="lb-usub">Level ${u.level} · ${getBadge(u.level)}</div>
+        </div>
+      </div>
+      <div class="lb-cell"><span class="lb-level-chip">Lv ${u.level}</span></div>
+      <div class="lb-cell lb-acc-cell">
+        <div class="lb-acc-bar-wrap"><div class="lb-acc-bar" style="width:${u.acc}%;background:${accColor(u.acc)}"></div></div>
+        <span class="lb-acc-num">${u.acc}%</span>
+      </div>
+      <div class="lb-cell lb-xp-val">${u.xp}</div>
+    </div>`).join('');
+}
+
+function accColor(a) {
+  if (a >= 90) return 'var(--green)';
+  if (a >= 75) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function getBadge(level) {
+  if (level >= 7) return '🏆 Master';
+  if (level >= 5) return '💎 Expert';
+  if (level >= 3) return '🔥 Intermediate';
+  return '🌱 Beginner';
+}
+</script>
+</body>
+</html>

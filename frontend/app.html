@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice Room — Phoneme Forge</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c3aed'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='%23fdf8ff' font-weight='bold'>P</text></svg>" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){var t=localStorage.getItem('pf_theme');document.documentElement.setAttribute('data-theme',t||'dark');})()</script>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<canvas id="cursor-trail-canvas"></canvas>
+
+<!-- Nav -->
+<nav class="nav">
+  <a class="nav-logo" href="/"><span>Phoneme</span> Forge</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="app.html" class="active">Practice</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <span id="navUser" style="font-size:0.8rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;"></span>
+    <button id="navSignOut" onclick="signOutUser()" style="display:none;background:transparent;border:1px solid var(--border-mid);color:var(--text-3);border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 160ms;" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border-mid)';this.style.color='var(--text-3)'">Sign Out</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+  </div>
+</nav>
+
+<!-- Analyzing overlay -->
+<div class="analyzing-overlay" id="analyzingOverlay">
+  <div class="analyzing-spinner"></div>
+  <div class="analyzing-text">ANALYZING PRONUNCIATION</div>
+  <div class="analyzing-step" id="analyzingStep">Transcribing speech with Whisper…</div>
+</div>
+
+<!-- App Layout -->
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Practice sentences -->
+    <div>
+      <div class="sidebar-section-title">// PRACTICE SENTENCES</div>
+      <div class="sentence-list" id="sentenceList">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Custom sentence input -->
+    <div>
+      <div class="sidebar-section-title">// CUSTOM SENTENCE</div>
+      <textarea id="customSentence"
+        style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:0.65rem 0.75rem;font-family:'Outfit',sans-serif;font-size:0.82rem;color:var(--text-1);resize:vertical;min-height:70px;outline:none;transition:border-color 160ms;line-height:1.5;"
+        placeholder="Type your own sentence here…"
+        onfocus="this.style.borderColor='var(--amber)'"
+        onblur="this.style.borderColor='var(--border)'"></textarea>
+      <button onclick="useCustomSentence()" style="margin-top:0.4rem;width:100%;background:var(--amber-dim);border:1px solid rgba(167,139,250,0.2);color:var(--amber);border-radius:var(--radius);padding:0.5rem;font-family:'Outfit',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 160ms;" onmouseover="this.style.background='rgba(167,139,250,0.15)'" onmouseout="this.style.background='var(--amber-dim)'">Use This Sentence</button>
+    </div>
+
+    <!-- Session history -->
+    <div>
+      <div class="sidebar-section-title">// SESSION HISTORY</div>
+      <div id="historyList">
+        <div style="font-size:0.76rem;color:var(--text-4);font-family:'JetBrains Mono',monospace;">No attempts yet.</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div>
+      <div class="sidebar-section-title">// SESSION STATS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:0.7rem;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;color:var(--amber);" id="statAttempts">0</div>
+          <div style="font-size:0.65rem;color:var(--text-4);text-transform:uppercase;letter-spacing:0.1em;">Attempts</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:0.7rem;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;color:var(--green);" id="statAvg">—</div>
+          <div style="font-size:0.65rem;color:var(--text-4);text-transform:uppercase;letter-spacing:0.1em;">Avg Score</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:0.7rem;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;color:var(--amber);" id="statBest">—</div>
+          <div style="font-size:0.65rem;color:var(--text-4);text-transform:uppercase;letter-spacing:0.1em;">Best</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:0.7rem;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;color:var(--blue);" id="statStreak">0🔥</div>
+          <div style="font-size:0.65rem;color:var(--text-4);text-transform:uppercase;letter-spacing:0.1em;">Streak ≥70</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Panel -->
+  <div class="main-panel">
+
+    <!-- Reference sentence display -->
+    <div class="reference-box">
+      <div class="ref-label">// TARGET SENTENCE — say this out loud</div>
+      <div class="ref-text" id="referenceText">Select a sentence from the sidebar or type your own</div>
+    </div>
+
+    <!-- Recording panel -->
+    <div class="record-panel">
+
+      <!-- Waveform -->
+      <canvas id="waveformCanvas"></canvas>
+
+      <!-- Big mic button -->
+      <button class="mic-button" id="micBtn" onclick="toggleRecording()" title="Click to record">
+        🎙
+      </button>
+
+      <!-- Controls -->
+      <div class="record-controls">
+        <button class="btn-record" id="startBtn" onclick="startRecording()">
+          ⏺ Start Recording
+        </button>
+        <button class="btn-stop"   id="stopBtn"  onclick="stopRecording()" disabled>
+          ⏹ Stop & Analyze
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div class="record-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Ready — select a sentence and press record</span>
+        <span id="recordTimer" style="margin-left:auto;font-family:'JetBrains Mono',monospace;"></span>
+      </div>
+    </div>
+
+    <!-- Score Panel (hidden until analysis done) -->
+    <div class="score-panel" id="scorePanel">
+
+      <!-- Score header -->
+      <div class="score-header">
+        <div class="score-big">
+          <span class="score-num" id="scoreNum" style="color:var(--amber)">—</span>
+          <span class="score-denom"> / 100</span>
+        </div>
+        <div id="scoreGrade" class="score-grade grade-good">—</div>
+      </div>
+
+      <!-- Sub-scores -->
+      <div class="sub-scores">
+        <div class="sub-score">
+          <span class="sub-score-val" id="scoreAccuracy">—</span>
+          <div class="sub-score-label">Accuracy</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barAccuracy" style="background:var(--amber);"></div></div>
+        </div>
+        <div class="sub-score">
+          <span class="sub-score-val" id="scoreFluency">—</span>
+          <div class="sub-score-label">Fluency</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barFluency" style="background:var(--green);"></div></div>
+        </div>
+        <div class="sub-score">
+          <span class="sub-score-val" id="scoreCompleteness">—</span>
+          <div class="sub-score-label">Completeness</div>
+          <div class="score-bar-wrap"><div class="score-bar" id="barCompleteness" style="background:var(--blue);"></div></div>
+        </div>
+      </div>
+
+      <!-- What you said -->
+      <div class="transcription-box">
+        <div class="trans-label">// You said</div>
+        <div class="trans-text" id="transcriptionText">—</div>
+      </div>
+
+      <!-- Word diff -->
+      <div class="diff-legend">
+        <span><span class="legend-dot" style="background:#34d399"></span>Correct</span>
+        <span><span class="legend-dot" style="background:#f87171"></span>Missed</span>
+        <span><span class="legend-dot" style="background:var(--amber)"></span>Extra / Substituted</span>
+      </div>
+      <div class="word-diff" id="wordDiff"></div>
+
+      <!-- AI Feedback -->
+      <div class="feedback-box">
+        <div class="feedback-title">🤖 AI Coach Feedback</div>
+        <div class="feedback-text" id="feedbackText">Analyzing…</div>
+      </div>
+
+      <!-- Phoneme Analysis Panel -->
+      <div class="phoneme-panel" id="phonemePanel">
+        <div class="phoneme-panel-title">🔬 Phoneme-Level Analysis</div>
+        <div class="phoneme-words" id="phonemeWords"></div>
+      </div>
+
+      <!-- XP earned this attempt -->
+      <div id="xpEarnedBanner" style="display:none;margin-top:1rem;padding:0.8rem 1.1rem;background:var(--amber-dim);border:1px solid var(--amber);border-radius:var(--radius);display:flex;align-items:center;gap:0.8rem;">
+        <span style="font-size:1.2rem;">✨</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.88rem;color:var(--amber);font-weight:600;" id="xpEarnedText">+0 XP earned</span>
+        <a href="dashboard.html" style="margin-left:auto;font-size:0.78rem;color:var(--amber);text-decoration:none;border:1px solid var(--amber);padding:3px 10px;border-radius:5px;transition:all 160ms;" onmouseover="this.style.background='var(--amber)';this.style.color='var(--void)'" onmouseout="this.style.background='transparent';this.style.color='var(--amber)'">View Dashboard →</a>
+      </div>
+
+      <!-- Try again -->
+      <div style="text-align:right;margin-top:1.2rem;">
+        <button onclick="resetForNextAttempt()" style="background:var(--surface-2);border:1px solid var(--border-mid);color:var(--text-2);border-radius:var(--radius);padding:0.55rem 1.2rem;font-family:'Outfit',sans-serif;font-weight:500;font-size:0.85rem;cursor:pointer;transition:all 160ms;" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border-mid)';this.style.color='var(--text-2)'">
+          ↻ Try Again
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /main-panel -->
+</div><!-- /app-layout -->
+
+<!-- Level-up modal -->
+<div class="levelup-overlay" id="levelupOverlay">
+  <div class="levelup-modal">
+    <div class="levelup-burst" id="levelupBurst"></div>
+    <div class="levelup-emoji">🎉</div>
+    <div class="levelup-title">Level Up!</div>
+    <div class="levelup-sub" id="levelupSub">Welcome to the next level!</div>
+    <div class="levelup-unlocked" id="levelupUnlocked"></div>
+    <button class="levelup-btn" onclick="closeLevelUp()">Continue →</button>
+  </div>
+</div>
+
+<!-- Anti-gravity button -->
+<button class="gravity-btn" id="gravityBtn" onclick="toggleGravity()">⚛ Enable Anti-Gravity Mode</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/cursor.js"></script>
+<script src="js/antigravity.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/app.js"></script>
+
+<script type="module">
+// Auth check
+import { auth } from "/firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const SESSION_KEY = "vs_user";
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    const name = user.displayName || user.email.split("@")[0];
+    document.getElementById("navUser").textContent  = name;
+    document.getElementById("navSignOut").style.display = "";
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      uid: user.uid, email: user.email, name,
+    }));
+  }
+});
+
+window.signOutUser = async function() {
+  await signOut(auth);
+  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
+  window.location.href = "/login";
+};
+</script>
+</body>
+</html>

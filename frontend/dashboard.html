@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Phoneme Forge</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c3aed'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='%23fdf8ff' font-weight='bold'>P</text></svg>" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){var t=localStorage.getItem('pf_theme');document.documentElement.setAttribute('data-theme',t||'dark');})()</script>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<canvas id="cursor-trail-canvas"></canvas>
+
+<!-- Level-up modal -->
+<div class="levelup-overlay" id="levelupOverlay">
+  <div class="levelup-modal">
+    <div class="levelup-burst" id="levelupBurst"></div>
+    <div class="levelup-emoji">🎉</div>
+    <div class="levelup-title">Level Up!</div>
+    <div class="levelup-sub" id="levelupSub">Welcome to Level 4 in Phoneme Forge</div>
+    <div class="levelup-unlocked" id="levelupUnlocked"></div>
+    <button class="levelup-btn" onclick="closeLevelUp()">Continue →</button>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span>Phoneme</span> Forge</a>
+  <div class="nav-links">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="app.html">Practice</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <span id="navUser" style="font-size:0.8rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;"></span>
+    <button id="navSignOut" onclick="signOutUser()" style="display:none;background:transparent;border:1px solid var(--border-mid);color:var(--text-3);border-radius:6px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 160ms;" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border-mid)';this.style.color='var(--text-3)'">Sign Out</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+  </div>
+</nav>
+
+<div class="dash-layout">
+
+  <!-- ── LEFT: profile + level ───────────────────────────────────────────── -->
+  <aside class="dash-side">
+
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar">RK</div>
+      <div class="profile-name" id="profileName">Learner</div>
+      <div class="profile-email" id="profileEmail">—</div>
+      <div class="profile-badges" id="profileBadges"></div>
+    </div>
+
+    <div class="level-card">
+      <div class="level-card-top">
+        <div>
+          <div class="level-label">// CURRENT LEVEL</div>
+          <div class="level-number" id="dashLevel">1</div>
+        </div>
+        <div class="level-ring-wrap">
+          <svg viewBox="0 0 60 60" class="level-ring-svg">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="var(--border-mid)" stroke-width="4"/>
+            <circle cx="30" cy="30" r="24" fill="none" stroke="var(--amber)" stroke-width="4"
+              stroke-dasharray="150.8" stroke-dashoffset="150.8"
+              stroke-linecap="round" transform="rotate(-90 30 30)"
+              id="levelRingCircle" style="transition:stroke-dashoffset 1.2s ease;"/>
+          </svg>
+          <div class="level-ring-pct" id="levelRingPct">0%</div>
+        </div>
+      </div>
+      <div class="xp-row">
+        <span id="dashXP">0</span> / <span id="dashXPNext">50</span> XP
+      </div>
+      <div class="xp-track"><div class="xp-track-fill" id="dashXPBar" style="width:0%"></div></div>
+      <div class="xp-next-label" id="dashNextLabel">50 XP to Level 2</div>
+    </div>
+
+    <div class="streak-card">
+      <div class="streak-fire">🔥</div>
+      <div>
+        <div class="streak-num" id="dashStreak">0</div>
+        <div class="streak-label">Day Streak</div>
+      </div>
+      <div class="streak-dots" id="streakDots"></div>
+    </div>
+
+    <div class="dash-nav-links">
+      <a href="app.html" class="dash-nav-btn primary">🎙 Start Practicing</a>
+      <a href="leaderboard.html" class="dash-nav-btn ghost">🏆 Leaderboard</a>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN ────────────────────────────────────────────────────────────── -->
+  <main class="dash-main">
+
+    <!-- Stats row -->
+    <div class="dash-stats-row">
+      <div class="dash-stat">
+        <div class="dash-stat-icon">🎯</div>
+        <div class="dash-stat-val" id="statAccuracy">—</div>
+        <div class="dash-stat-label">Avg Accuracy</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">📝</div>
+        <div class="dash-stat-val" id="statAttempts">0</div>
+        <div class="dash-stat-label">Total Attempts</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">⭐</div>
+        <div class="dash-stat-val" id="statBest">—</div>
+        <div class="dash-stat-label">Best Score</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">📈</div>
+        <div class="dash-stat-val" id="statWeekXP">0</div>
+        <div class="dash-stat-label">XP This Week</div>
+      </div>
+    </div>
+
+    <!-- Lessons -->
+    <div class="dash-section-head">
+      <div class="dash-section-title">// LESSON TRACK</div>
+      <a href="app.html" style="font-size:0.78rem;color:var(--amber);text-decoration:none;">View all →</a>
+    </div>
+    <div class="lessons-track" id="lessonTrack"></div>
+
+    <!-- Weak words + recent activity -->
+    <div class="dash-two-col">
+
+      <div>
+        <div class="dash-section-title" style="margin-bottom:0.9rem;">// WEAK WORDS</div>
+        <div class="weak-words-list" id="weakWordsList">
+          <div style="font-size:0.78rem;color:var(--text-4);font-family:'JetBrains Mono',monospace;">Practice more to see weak words.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="dash-section-title" style="margin-bottom:0.9rem;">// RECENT ACTIVITY</div>
+        <div class="activity-list" id="activityList">
+          <div style="font-size:0.78rem;color:var(--text-4);font-family:'JetBrains Mono',monospace;">No activity yet. Start practicing!</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Score trend mini chart -->
+    <div class="dash-section-title" style="margin-bottom:0.9rem;margin-top:1.6rem;">// SCORE TREND</div>
+    <div class="trend-wrap">
+      <canvas id="trendCanvas" height="100"></canvas>
+      <div class="trend-empty" id="trendEmpty">Practice at least 3 times to see your trend.</div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/cursor.js"></script>
+<script src="js/antigravity.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/gamification.js"></script>
+
+<script type="module">
+import { auth } from "/firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('navUser').textContent  = name;
+    document.getElementById('navSignOut').style.display = '';
+    document.getElementById('profileName').textContent  = name;
+    document.getElementById('profileEmail').textContent = user.email;
+    document.getElementById('profileAvatar').textContent =
+      name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  }
+});
+
+window.signOutUser = async function() {
+  await signOut(auth);
+  localStorage.removeItem('vs_user');
+  window.location.href = '/login';
+};
+</script>
+
+<script>
+// Boot dashboard
+document.addEventListener('DOMContentLoaded', () => {
+  initDashboard();
+});
+</script>
+</body>
+</html>
